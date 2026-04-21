@@ -174,14 +174,14 @@ export default function App() {
 
     try {
       const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview", 
+        model: "gemini-3-flash-preview", 
         config: {
           systemInstruction: "You are an expert game developer specialized in single-file HTML5 Canvas games. Return ONLY valid, self-contained JavaScript code. NO markdown blocks, NO triple backticks, NO explanations. The code must target an existing canvas with id 'gameCanvas' sized 800x500. Use requestAnimationFrame for the loop. Handle keyboard input (WASD/Arrows). Make it neon/colorful.",
         },
         contents: `Create a game based on this description: ${idea}. ${includeAi ? 'The game must include an AI opponent or autonomous entities.' : ''} Ensure all assets are drawn directly to the canvas using code.`,
       });
 
-      const code = result.text().replace(/```javascript|```js|```/g, '').trim();
+      const code = result.text?.replace(/```javascript|```js|```/g, '').trim() || "";
       
       if (!code) {
         throw new Error("The AI failed to generate game code. Please try a different description or try again.");
