@@ -174,7 +174,7 @@ export default function App() {
 
     try {
       const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview", 
+        model: "gemini-3.1-flash-lite-preview", 
         config: {
           systemInstruction: "You are an expert game developer specialized in single-file HTML5 Canvas games. Return ONLY valid, self-contained JavaScript code. NO markdown blocks, NO triple backticks, NO explanations. The code must target an existing canvas with id 'gameCanvas' sized 800x500. Use requestAnimationFrame for the loop. Handle keyboard input (WASD/Arrows). Make it neon/colorful.",
         },
@@ -205,7 +205,11 @@ export default function App() {
       setScreen('game');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Something went wrong during generation.");
+      let msg = err.message || "Something went wrong during generation.";
+      if (err.message?.includes("high demand") || err.code === 503) {
+        msg = "The AI is currently busy (high demand). Please wait a few seconds and try again!";
+      }
+      setError(msg);
       setScreen('lobby');
     }
   };
