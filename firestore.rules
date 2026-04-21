@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- REUSABLE HELPERS ---
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+
+    // --- USER PROFILE RULES ---
+    match /users/{docId} {
+      function isValidUser(data) {
+        return data.username is string && data.username.size() >= 1 && data.username.size() <= 50 &&
+               data.email is string && data.email.size() >= 5 && data.email.size() <= 100 &&
+               data.uid == request.auth.uid;
+      }
+
+      // Allow users to create their own record during signup
+      allow create: if isSignedIn() && isValidUser(incoming());
+      
+      // Public profile reading (limited)
+      // We allow list for the "history" lookups if needed, though usually we query by ownerId
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+    }
+
+    // --- GAMES RULES ---
+    match /games/{gameId} {
+      function isValidGame(data) {
+        return data.userId == request.auth.uid &&
+               data.username is string && data.username.size() > 0 &&
+               data.description is string && data.description.size() <= 2000 &&
+               data.code is string && data.code.size() <= 1024 * 1024 &&
+               data.timestamp is string;
+      }
+
+      // Users can only create their own games
+      allow create: if isSignedIn() && isValidGame(incoming());
+      
+      // Games are public to read, but restricted to list by owner for history
+      // The current app shows history of "Your Creations" but the rules should ideally 
+      // restrict the list query to the owner's data to be "Secure by List"
+      allow get: if true;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // No updates for now (games are immutable in this version)
+      allow update: if false;
+      allow delete: if isOwner(existing().userId);
+    }
+  }
+}

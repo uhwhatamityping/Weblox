@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile metadata",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "User email address" },
+        "username": { "type": "string", "description": "Display callsign" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "username"]
+    },
+    "Game": {
+      "title": "Game",
+      "description": "AI-generated game world",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the creator" },
+        "username": { "type": "string", "description": "Callsign of the creator" },
+        "description": { "type": "string", "description": "Source idea" },
+        "code": { "type": "string", "description": "JavaScript blob" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "username", "description", "code", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Public user profiles"
+    },
+    "/games/{gameId}": {
+      "schema": "Game",
+      "description": "User generated games"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #2A004E;
+  --color-accent-cyan: #00E5FF;
+  --color-accent-green: #76FF03;
+  --color-accent-pink: #FF4081;
+}
+
+body {
+  @apply font-sans bg-[#2A004E] text-white overflow-x-hidden;
+}
+
+.roblox-button {
+  @apply bg-[#76FF03] hover:bg-[#66DD00] text-[#2A004E] font-black px-8 py-4 rounded-3xl shadow-[0_8px_0_#4C9900] active:shadow-[0_4px_0_#4C9900] active:translate-y-1 transition-all uppercase tracking-wider text-xl flex items-center justify-center gap-2;
+}
+
+.roblox-input {
+  @apply bg-slate-100 text-slate-800 font-bold px-6 py-4 rounded-3xl border-4 border-slate-200 focus:border-[#00E5FF] outline-none transition-all shadow-inner placeholder:text-slate-400;
+}
+
+.roblox-card {
+  @apply bg-white/10 rounded-3xl p-6 border-2 border-white/10 hover:border-[#00E5FF] transition-all cursor-pointer shadow-lg backdrop-blur-sm;
+}
+
+.nav-tag {
+  @apply bg-white/10 px-4 py-1 rounded-full text-[10px] font-black border border-white/20 uppercase tracking-widest text-[#00E5FF];
+}
+
+.fancy-heading {
+  @apply font-black tracking-tighter uppercase;
+}
+
+.neon-glow-pink {
+  box-shadow: 0 0 30px rgba(255, 64, 129, 0.4);
+}
+
+.neon-glow-cyan {
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+}
+
+.neon-glow-green {
+  box-shadow: 0 0 30px rgba(118, 255, 3, 0.4);
+}
