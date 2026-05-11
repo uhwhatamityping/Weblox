@@ -8,9 +8,18 @@
         "uid": { "type": "string", "description": "Firebase Auth UID" },
         "email": { "type": "string", "description": "User email address" },
         "username": { "type": "string", "description": "Display callsign" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "slug": { "type": "string", "description": "URL-friendly username for person_name" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "avatarConfig": {
+          "type": "object",
+          "properties": {
+            "bodyShape": { "type": "string" },
+            "color": { "type": "string" },
+            "accessory": { "type": "string" }
+          }
+        }
       },
-      "required": ["uid", "email", "username"]
+      "required": ["uid", "email", "username", "slug"]
     },
     "Game": {
       "title": "Game",
@@ -18,22 +27,43 @@
       "type": "object",
       "properties": {
         "userId": { "type": "string", "description": "UID of the creator" },
-        "username": { "type": "string", "description": "Callsign of the creator" },
+        "creatorSlug": { "type": "string", "description": "URL-friendly creator name" },
+        "gameSlug": { "type": "string", "description": "URL-friendly game name" },
         "description": { "type": "string", "description": "Source idea" },
         "code": { "type": "string", "description": "JavaScript blob" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["userId", "creatorSlug", "gameSlug", "description", "code", "timestamp"]
+    },
+    "GameSave": {
+      "title": "GameSave",
+      "description": "A saved game progress state",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of player" },
+        "gameId": { "type": "string", "description": "Document ID of the game" },
+        "stateData": { "type": "string", "description": "JSON serialized game state, position, inventory" },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "username", "description", "code", "timestamp"]
+      "required": ["userId", "gameId", "stateData", "timestamp"]
     }
   },
   "firestore": {
-    "/users/{userId}": {
+    "/profiles/{username}": {
       "schema": "User",
       "description": "Public user profiles"
     },
     "/games/{gameId}": {
       "schema": "Game",
       "description": "User generated games"
+    },
+    "/saves/{saveId}": {
+      "schema": "GameSave",
+      "description": "Game saves for users"
     }
   }
 }

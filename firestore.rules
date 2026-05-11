@@ -14,18 +14,24 @@ service cloud.firestore {
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
 
     // --- USER PROFILE RULES ---
-    match /users/{docId} {
+    match /profiles/{docId} {
       function isValidUser(data) {
-        return data.username is string && data.username.size() >= 1 && data.username.size() <= 50 &&
-               data.email is string && data.email.size() >= 5 && data.email.size() <= 100 &&
-               data.uid == request.auth.uid;
+        return data.keys().hasAll(['username', 'email', 'uid', 'slug', 'timestamp']) &&
+               data.username is string && data.username.size() >= 1 && data.username.size() <= 50 &&
+               data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 50 && data.slug.matches('^[a-z0-9\\-]+$') &&
+               data.email is string && data.email.size() >= 0 && data.email.size() <= 100 &&
+               data.uid == request.auth.uid &&
+               (!data.keys().hasAny(['avatarConfig']) || (data.avatarConfig is map && 
+               (!data.avatarConfig.keys().hasAny(['bodyShape']) || data.avatarConfig.bodyShape is string) &&
+               (!data.avatarConfig.keys().hasAny(['color']) || data.avatarConfig.color is string) &&
+               (!data.avatarConfig.keys().hasAny(['accessory']) || data.avatarConfig.accessory is string)));
       }
 
       // Allow users to create their own record during signup
-      allow create: if isSignedIn() && isValidUser(incoming());
+      allow create: if isSignedIn() && isValidUser(incoming()) && docId == incoming().username;
       
-      // Public profile reading (limited)
-      // We allow list for the "history" lookups if needed, though usually we query by ownerId
+      allow update: if isSignedIn() && existing().uid == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['avatarConfig', 'username', 'slug']) && isValidUser(incoming());
+      
       allow get: if isSignedIn();
       allow list: if isSignedIn();
     }
@@ -33,24 +39,51 @@ service cloud.firestore {
     // --- GAMES RULES ---
     match /games/{gameId} {
       function isValidGame(data) {
-        return data.userId == request.auth.uid &&
-               data.username is string && data.username.size() > 0 &&
+        return data.keys().hasAll(['userId', 'creatorSlug', 'gameSlug', 'description', 'code', 'timestamp']) &&
+               data.userId == request.auth.uid &&
+               data.creatorSlug is string && data.creatorSlug.size() > 0 &&
+               data.gameSlug is string && data.gameSlug.size() > 0 && data.gameSlug.matches('^[a-z0-9\\-]+$') &&
                data.description is string && data.description.size() <= 2000 &&
                data.code is string && data.code.size() <= 1024 * 1024 &&
-               data.timestamp is string;
+               data.timestamp is string &&
+               (!data.keys().hasAny(['tags']) || (data.tags is list && data.tags.size() <= 10)) &&
+               (!data.keys().hasAny(['ratings']) || (data.ratings is map));
       }
 
       // Users can only create their own games
-      allow create: if isSignedIn() && isValidGame(incoming());
+      allow create: if isSignedIn() && isValidId(gameId) && isValidGame(incoming());
       
-      // Games are public to read, but restricted to list by owner for history
-      // The current app shows history of "Your Creations" but the rules should ideally 
-      // restrict the list query to the owner's data to be "Secure by List"
+      // Public sharing reads
       allow get: if true;
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if true; // Allows querying by slug
       
-      // No updates for now (games are immutable in this version)
-      allow update: if false;
+      allow update: if (
+        isSignedIn() && 
+        incoming().diff(existing()).affectedKeys().hasOnly(['ratings']) && 
+        incoming().ratings is map && 
+        incoming().ratings[request.auth.uid] is number && 
+        incoming().ratings[request.auth.uid] >= 1 && 
+        incoming().ratings[request.auth.uid] <= 5 &&
+        incoming().ratings.diff(existing().get('ratings', {})).affectedKeys().hasOnly([request.auth.uid])
+      );
+      allow delete: if isOwner(existing().userId);
+    }
+    
+    // --- SAVES RULES ---
+    match /saves/{saveId} {
+      function isValidSave(data) {
+        return data.keys().hasAll(['userId', 'gameId', 'stateData', 'timestamp']) &&
+               data.userId == request.auth.uid &&
+               data.gameId is string && data.gameId.size() > 0 &&
+               data.stateData is string && data.stateData.size() < 1024 * 1024 &&
+               data.timestamp is string;
+      }
+      
+      allow create: if isSignedIn() && isValidId(saveId) && isValidSave(incoming());
+      // Updates are allowed for overwriting saves
+      allow update: if isSignedIn() && isValidId(saveId) && isValidSave(incoming()) && existing().userId == request.auth.uid;
+      allow get: if isOwner(resource.data.userId);
+      allow list: if isOwner(resource.data.userId);
       allow delete: if isOwner(existing().userId);
     }
   }
